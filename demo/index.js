@@ -1,5 +1,5 @@
 import {
-  DEFAULT_BACKEND_BASE_URL,
+  DEFAULT_PROXY_PREFIX,
   createBookClient,
   createLimiter,
   getDeviceProfile,
@@ -9,10 +9,12 @@ const { jsPDF } = window.jspdf;
 
 const SAMPLE_BOOK_URL =
   "https://www.rekhta.org/ebooks/deewan-e-chirkin-shekh-baqar-ali-chirkeen-ebooks-8";
+const DEFAULT_PROXY_TEMPLATE = `${DEFAULT_PROXY_PREFIX}`;
+const PROXY_STORAGE_KEY = "rekhta_proxy_prefix";
 
 const deviceProfile = getDeviceProfile();
-const bookClient = createBookClient({
-  backendBaseUrl: DEFAULT_BACKEND_BASE_URL,
+let bookClient = createBookClient({
+  proxyPrefix: DEFAULT_PROXY_TEMPLATE,
 });
 
 const elements = {
@@ -33,8 +35,8 @@ const elements = {
   readerPageInput: document.getElementById("reader-page-input"),
   readerPageTotal: document.getElementById("reader-page-total"),
   readerPrev: document.getElementById("reader-prev"),
-  readerStatus: document.getElementById("reader-status"),
   statusText: document.getElementById("status-text"),
+  proxyInput: document.getElementById("proxy-prefix"),
   urlInput: document.getElementById("book-url"),
 };
 
@@ -53,6 +55,8 @@ const state = {
 const previewLimiter = createLimiter(deviceProfile.previewConcurrency);
 
 elements.urlInput.value = SAMPLE_BOOK_URL;
+elements.proxyInput.value =
+  localStorage.getItem(PROXY_STORAGE_KEY) || DEFAULT_PROXY_TEMPLATE;
 elements.bookForm.addEventListener("submit", onLoadBook);
 elements.downloadButton.addEventListener("click", onDownloadPdf);
 elements.cancelButton.addEventListener("click", onCancelWork);
@@ -70,11 +74,14 @@ renderDeviceHint();
 async function onLoadBook(event) {
   event.preventDefault();
   const bookUrl = elements.urlInput.value.trim();
+  const proxyPrefix = elements.proxyInput.value.trim();
   if (!bookUrl) {
     setStatus("Enter a book URL before loading.", "error");
     return;
   }
 
+  localStorage.setItem(PROXY_STORAGE_KEY, proxyPrefix);
+  bookClient = createBookClient({ proxyPrefix });
   cancelActiveWork();
   resetPreviewState();
 
@@ -95,11 +102,11 @@ async function onLoadBook(event) {
     setBusy(false);
     setProgress(100, "Manifest cached");
     setStatus(
-      `Loaded ${manifest.bookName}. Preview pages are fetched only when they scroll into view.`,
+      `Loaded ${manifest.bookName}. Rekhta is fetched through the configured proxy.`,
       "success",
     );
   } catch (error) {
-    handleError(error, "Unable to load the book manifest.");
+    handleError(error, "Unable to load the book manifest. Check the proxy prefix.");
   }
 }
 
@@ -347,7 +354,7 @@ function setProgress(value, label) {
 }
 
 function renderDeviceHint() {
-  elements.cacheBadge.textContent = `${deviceProfile.previewConcurrency} preview workers, ${deviceProfile.downloadConcurrency} download workers`;
+  elements.cacheBadge.textContent = `${deviceProfile.previewConcurrency} preview workers, ${deviceProfile.downloadConcurrency} PDF workers`;
 }
 
 function handleError(error, fallbackMessage) {
@@ -377,7 +384,6 @@ function closeReader() {
   elements.readerModal.classList.add("reader-modal--hidden");
   elements.readerImage.removeAttribute("src");
   elements.readerImage.alt = "";
-  elements.readerStatus.textContent = "";
   document.body.style.overflow = "";
 }
 
@@ -435,7 +441,6 @@ async function renderReaderPage(pageIndex) {
 
   const requestToken = ++state.readerRequestToken;
   elements.readerPageInput.value = `${pageIndex + 1}`;
-  elements.readerStatus.textContent = `Loading page ${pageIndex + 1}...`;
   elements.readerPrev.disabled =
     pageIndex + getDirectionalDelta("prev") < 0 ||
     pageIndex + getDirectionalDelta("prev") >= state.manifest.pageCount;
@@ -454,13 +459,11 @@ async function renderReaderPage(pageIndex) {
 
     elements.readerImage.src = objectUrl;
     elements.readerImage.alt = `${state.manifest.bookName} page ${pageIndex + 1}`;
-    elements.readerStatus.textContent = `Page ${pageIndex + 1} of ${state.manifest.pageCount}`;
   } catch (error) {
     if (error.name === "AbortError") {
       return;
     }
 
-    elements.readerStatus.textContent = `Could not open page ${pageIndex + 1}.`;
   }
 }
 

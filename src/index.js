@@ -1,4 +1,4 @@
-const DEFAULT_BACKEND_BASE_URL = "https://api.theothermeunfolded.com";
+const DEFAULT_PROXY_PREFIX = "";
 const PAGE_KEY_ENDPOINT =
   "https://ebooksapi.rekhta.org/api_getebookpagebyid_websiteapp/?wref=from-site&&pgid=";
 const DEFAULT_TILE_SIZE = 50;
@@ -7,45 +7,45 @@ const DEFAULT_TILE_GAP = 16;
 const memoryJsonCache = new Map();
 
 export {
-  DEFAULT_BACKEND_BASE_URL,
+  DEFAULT_PROXY_PREFIX,
   createBookClient,
   createLimiter,
   getDeviceProfile,
 };
 
 function createBookClient(options = {}) {
-  const backendBaseUrl = (options.backendBaseUrl || DEFAULT_BACKEND_BASE_URL).replace(
-    /\/$/,
-    "",
-  );
+  const proxyPrefix = options.proxyPrefix || DEFAULT_PROXY_PREFIX;
   const jsonCache = options.jsonCache || createJsonCache();
   const fetchImpl = options.fetchImpl || fetch.bind(globalThis);
   const tileSize = options.tileSize || DEFAULT_TILE_SIZE;
   const tileGap = options.tileGap || DEFAULT_TILE_GAP;
 
   return {
-    backendBaseUrl,
-    buildManifestUrl: (bookUrl) => buildManifestUrl(bookUrl, backendBaseUrl),
+    buildManifestUrl: (bookUrl) => buildManifestUrl(bookUrl),
     getManifest,
     getPageKey,
     fetchImageBlob,
+    proxyPrefix,
     renderPageToCanvas,
     renderPageToBlob,
   };
 
   async function getManifest(bookUrl, fetchOptions = {}) {
-    const manifestUrl = buildManifestUrl(bookUrl, backendBaseUrl);
-    const payload = await getCachedJson(manifestUrl, fetchOptions);
-    return normalizeManifest(bookUrl, payload);
+    const manifestUrl = buildManifestUrl(bookUrl);
+    const html = await getCachedText(manifestUrl, fetchOptions);
+    return normalizeManifest(bookUrl, html);
   }
 
   async function getPageKey(pageId, fetchOptions = {}) {
-    const keyUrl = `${PAGE_KEY_ENDPOINT}${encodeURIComponent(pageId)}`;
+    const keyUrl = applyProxyPrefix(
+      `${PAGE_KEY_ENDPOINT}${encodeURIComponent(pageId)}`,
+      proxyPrefix,
+    );
     return getCachedJson(keyUrl, fetchOptions);
   }
 
   async function fetchImageBlob(imageUrl, fetchOptions = {}) {
-    const response = await fetchImpl(imageUrl, {
+    const response = await fetchImpl(applyProxyPrefix(imageUrl, proxyPrefix), {
       method: "GET",
       mode: "cors",
       cache: "force-cache",
@@ -117,64 +117,98 @@ function createBookClient(options = {}) {
     await jsonCache.put(url, payload);
     return payload;
   }
+
+  async function getCachedText(url, fetchOptions = {}) {
+    if (!fetchOptions.forceRefresh) {
+      const cachedValue = await jsonCache.match(url);
+      if (typeof cachedValue === "string") {
+        return cachedValue;
+      }
+    }
+
+    const response = await fetchImpl(applyProxyPrefix(url, proxyPrefix), {
+      method: "GET",
+      mode: "cors",
+      signal: fetchOptions.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const payload = await response.text();
+    await jsonCache.put(url, payload);
+    return payload;
+  }
 }
 
-function buildManifestUrl(bookUrl, backendBaseUrl) {
-  return `${backendBaseUrl}/api/rekhtaBook/${encodeURIComponent(bookUrl)}`;
+function buildManifestUrl(bookUrl) {
+  return bookUrl;
 }
 
-function normalizeManifest(bookUrl, payload) {
-  const data = payload?.data || payload;
-  if (!data) {
-    throw new Error("Manifest payload is empty.");
+function normalizeManifest(bookUrl, html) {
+  if (!html) {
+    throw new Error("Manifest HTML is empty.");
   }
 
-  const pageIds = Array.isArray(data.pageIds) ? data.pageIds : [];
-  const pages = Array.isArray(data.pages) ? data.pages : [];
-  const scrambleMap = Array.isArray(data.scrambleMap)
-    ? data.scrambleMap.map((item, index) => ({
-        imageName: pages[index] || item.imgUrl?.split("/").pop() || "",
-        imgUrl: item.imgUrl,
-        index,
-        keyUrl: item.key,
-        pageId: pageIds[index] || extractPageId(item.key),
-      }))
-    : pageIds.map((pageId, index) => ({
-        imageName: pages[index] || "",
-        imgUrl: `https://ebooksapi.rekhta.org/images/${data._bookId}/${pages[index]}`,
-        index,
-        keyUrl: `${PAGE_KEY_ENDPOINT}${encodeURIComponent(pageId)}`,
-        pageId,
-      }));
+  const parser = new DOMParser();
+  const documentNode = parser.parseFromString(html, "text/html");
+  const bookName =
+    documentNode.querySelector("span.c-book-name")?.textContent?.trim() ||
+    documentNode.querySelector("title")?.textContent?.trim() ||
+    "Untitled book";
+  const author =
+    documentNode
+      .querySelector("span.faded")
+      ?.textContent?.replace(/\r?\n/g, "")
+      .replace(/ +/g, " ")
+      .replace("by ", "")
+      .trim() || "Unknown author";
+  const bookId = findTextBetween(html, 'var bookId = "', '";');
+  const pages = stringToStringArray(findTextBetween(html, "var pages = [", "];"));
+  const pageIds = stringToStringArray(
+    findTextBetween(html, "var pageIds = [", "];"),
+  );
+  const pageCount =
+    Number(findTextBetween(html, "var totalPageCount =", ";")) ||
+    Math.max(pages.length, pageIds.length);
+  const fileName = `${bookName} by ${author}`
+    .trim()
+    .replace(/ +/g, " ")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+  const scrambleMap = pageIds.map((pageId, index) => ({
+    imageName: pages[index] || "",
+    imgUrl: `https://ebooksapi.rekhta.org/images/${bookId}/${pages[index]}`,
+    index,
+    keyUrl: `${PAGE_KEY_ENDPOINT}${encodeURIComponent(pageId)}`,
+    pageId,
+  }));
 
   return {
-    actualUrl: data.actualUrl || "",
-    author: data.author || "Unknown author",
-    bookId: data._bookId || "",
-    bookName: data.bookName || "Untitled book",
+    actualUrl: bookUrl,
+    author,
+    bookId,
+    bookName,
     bookUrl,
-    fileName: data.fileName || "rekhta-book",
-    pageCount:
-      Number(data._pageCount) ||
-      scrambleMap.length ||
-      Math.max(pageIds.length, pages.length),
+    fileName: fileName || "rekhta-book",
+    pageCount,
     pageIds,
     pages,
     scrambleMap,
   };
 }
 
-function extractPageId(url) {
-  if (!url) {
-    return "";
+function applyProxyPrefix(url, proxyPrefix) {
+  if (!proxyPrefix) {
+    return url;
   }
 
-  try {
-    const parsedUrl = new URL(url);
-    return parsedUrl.searchParams.get("pageid") || parsedUrl.searchParams.get("pgid") || "";
-  } catch {
-    return "";
+  if (proxyPrefix.includes("{url}")) {
+    return proxyPrefix.replace("{url}", encodeURIComponent(url));
   }
+
+  return `${proxyPrefix}${encodeURIComponent(url)}`;
 }
 
 async function unscramblePage(options) {
@@ -289,6 +323,29 @@ function createJsonCache() {
 
     return caches.open(cacheName);
   }
+}
+
+function findTextBetween(source, start, end) {
+  const startIndex = source.indexOf(start);
+  if (startIndex === -1) {
+    return "";
+  }
+
+  const fromIndex = startIndex + start.length;
+  const endIndex = source.indexOf(end, fromIndex);
+  if (endIndex === -1) {
+    return "";
+  }
+
+  return source.slice(fromIndex, endIndex).trim();
+}
+
+function stringToStringArray(input) {
+  if (!input) {
+    return [];
+  }
+
+  return input.split(",").map((item) => item.replace(/"/g, "").trim());
 }
 
 function createLimiter(concurrency) {

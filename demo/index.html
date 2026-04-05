@@ -10,25 +10,13 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="hero">
+      <section class="hero hero--compact">
         <p class="eyebrow">Rekhta Downloader</p>
-        <h1>Fast book downloads with lazy preview and manifest caching.</h1>
+        <h1>Proxy-first Rekhta reader.</h1>
         <p>
-          This frontend reads your backend manifest, avoids scraping Rekhta in the browser,
-          and keeps the heavy work bounded so it can still run on weaker phones.
+          Load the actual Rekhta page through a proxy, preview lazily, read fullscreen, and
+          export a PDF only when needed.
         </p>
-
-        <form id="book-form" class="toolbar">
-          <input
-            id="book-url"
-            name="url"
-            type="url"
-            placeholder="Paste a Rekhta book URL"
-            autocomplete="off"
-          />
-          <button type="submit">Load Book</button>
-          <button id="cancel-button" type="button" disabled>Cancel</button>
-        </form>
 
         <div class="status-strip">
           <span class="badge" id="cache-badge">No manifest cached yet</span>
@@ -37,6 +25,32 @@
             <p id="status-text" data-tone="muted"></p>
           </div>
         </div>
+
+        <form id="book-form" class="hero-toolbar">
+          <input
+            id="book-url"
+            name="url"
+            type="url"
+            placeholder="Rekhta book URL"
+            autocomplete="off"
+          />
+          <input
+            id="proxy-prefix"
+            name="proxy"
+            type="text"
+            placeholder="Proxy prefix (use {url})"
+            autocomplete="off"
+          />
+          <button id="load-button" type="submit" class="hero-button hero-button--accent">
+            Go
+          </button>
+          <button id="download-button" type="button" class="hero-button" disabled>
+            PDF
+          </button>
+          <button id="cancel-button" type="button" class="hero-button" disabled>
+            Stop
+          </button>
+        </form>
       </section>
 
       <section class="dashboard">
@@ -64,9 +78,6 @@
             <progress id="task-progress" max="100" value="0"></progress>
           </div>
 
-          <div class="secondary-actions">
-            <button id="download-button" type="button" disabled>Download PDF</button>
-          </div>
         </aside>
 
         <section class="panel preview-panel">
@@ -76,22 +87,25 @@
       </section>
     </main>
 
+    <div class="dock-reader">
+      <button id="reader-close" type="button" class="dock-icon" aria-label="Close reader">
+        x
+      </button>
+      <button id="reader-prev" type="button" class="dock-icon" aria-label="Previous page">
+        &lt;
+      </button>
+      <label class="dock-pagebox" for="reader-page-input">
+        <input id="reader-page-input" type="number" min="1" inputmode="numeric" />
+        <span id="reader-page-total">/ 0</span>
+      </label>
+      <button id="reader-next" type="button" class="dock-icon" aria-label="Next page">
+        &gt;
+      </button>
+    </div>
+
     <div id="reader-modal" class="reader-modal reader-modal--hidden">
       <div class="reader-shell">
-        <div class="reader-toolbar">
-          <button id="reader-close" type="button" class="reader-close">Close</button>
-          <div class="reader-nav">
-            <button id="reader-prev" type="button" aria-label="Previous page">&lt;</button>
-            <label class="reader-pagebox" for="reader-page-input">
-              <input id="reader-page-input" type="number" min="1" inputmode="numeric" />
-              <span id="reader-page-total">/ 0</span>
-            </label>
-            <button id="reader-next" type="button" aria-label="Next page">&gt;</button>
-          </div>
-        </div>
-
         <div class="reader-stage">
-          <p id="reader-status" class="reader-status"></p>
           <img id="reader-image" class="reader-image" alt="" />
         </div>
       </div>

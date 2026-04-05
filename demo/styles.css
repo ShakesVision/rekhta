@@ -24,6 +24,7 @@ body {
   background:
     radial-gradient(circle at top, rgba(160, 63, 36, 0.12), transparent 30%),
     linear-gradient(180deg, #f8f2e8, var(--bg));
+  font-size: 0.92rem;
 }
 button,
 input {
@@ -32,7 +33,7 @@ input {
 
 .app-shell {
   width: min(1180px, calc(100vw - 24px));
-  margin: 24px auto 48px;
+  margin: 16px auto 92px;
 }
 
 .hero {
@@ -41,6 +42,10 @@ input {
   border-radius: 28px;
   background: linear-gradient(135deg, rgba(160, 63, 36, 0.12), rgba(255, 252, 246, 0.85)), var(--card);
   box-shadow: var(--shadow);
+}
+
+.hero--compact {
+  padding: 18px 20px;
 }
 
 .eyebrow {
@@ -53,62 +58,54 @@ input {
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 4.5rem);
-  line-height: 0.95;
+  font-size: clamp(1.4rem, 4vw, 2.6rem);
+  line-height: 1;
 }
 
 .hero p {
-  max-width: 58ch;
+  max-width: 64ch;
   color: var(--muted);
-  font-size: 1.04rem;
+  font-size: 0.94rem;
 }
 
-.toolbar {
+.hero-toolbar {
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 12px;
-  margin-top: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 14px 0 0;
 }
 
-.toolbar input {
-  min-width: 0;
-  padding: 14px 16px;
+.hero-toolbar input {
+  padding: 8px 10px;
   border: 1px solid var(--card-border);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.75);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
 }
 
-.toolbar button,
-.secondary-actions button {
-  padding: 14px 18px;
+.hero-button {
+  padding: 9px 14px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 12px;
   cursor: pointer;
+  font-weight: 700;
+  color: #fffaf5;
+  background: linear-gradient(135deg, #3a2f25, #1f160d);
   transition:
     transform 120ms ease,
     background 120ms ease,
     opacity 120ms ease;
 }
 
-.toolbar button:hover,
-.secondary-actions button:hover {
+.hero-button--accent {
+  background: linear-gradient(135deg, #c04e1d, #872f12);
+}
+
+.hero-button:hover {
   transform: translateY(-1px);
 }
 
-.toolbar button,
-#download-button {
-  color: #fffaf5;
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-}
-
-#cancel-button {
-  color: var(--ink);
-  background: rgba(34, 24, 15, 0.08);
-}
-
-.toolbar button:disabled,
-.secondary-actions button:disabled {
-  opacity: 0.45;
+.hero-button:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
   transform: none;
 }
@@ -122,7 +119,7 @@ input {
 }
 
 .badge {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 999px;
   background: rgba(34, 24, 15, 0.08);
   color: var(--muted);
@@ -144,12 +141,12 @@ input {
 .dashboard {
   display: grid;
   grid-template-columns: minmax(280px, 340px) 1fr;
-  gap: 18px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .panel {
-  padding: 20px;
+  padding: 16px;
   border: 1px solid var(--card-border);
   border-radius: 24px;
   background: var(--card);
@@ -157,8 +154,8 @@ input {
 }
 
 .panel h2 {
-  margin: 0 0 16px;
-  font-size: 1.25rem;
+  margin: 0 0 12px;
+  font-size: 1rem;
 }
 
 .meta-list {
@@ -182,8 +179,8 @@ input {
 
 .progress-stack {
   display: grid;
-  gap: 10px;
-  margin-top: 18px;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .progress-stack progress {
@@ -193,8 +190,8 @@ input {
 
 .secondary-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .preview-panel {
@@ -216,17 +213,17 @@ input {
 }
 
 .page-number {
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--card-border);
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 0.84rem;
 }
 
 .page-body {
   display: grid;
   place-items: center;
-  min-height: 240px;
-  padding: 12px;
+  min-height: 180px;
+  padding: 10px;
   background: linear-gradient(135deg, rgba(34, 24, 15, 0.02), rgba(160, 63, 36, 0.08));
 }
 
@@ -262,50 +259,7 @@ input {
 .reader-shell {
   width: min(100%, 1200px);
   height: min(100%, 96vh);
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 12px;
-}
-
-.reader-toolbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-}
-
-.reader-nav,
-.reader-close {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 250, 245, 0.18);
-  border-radius: 999px;
-  background: rgba(255, 250, 245, 0.08);
-  color: #fffaf5;
-}
-
-.reader-nav button,
-.reader-close {
-  min-width: 48px;
-}
-
-.reader-pagebox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #fffaf5;
-}
-
-.reader-pagebox input {
-  width: 72px;
-  padding: 8px 10px;
-  text-align: center;
-  border: 1px solid rgba(255, 250, 245, 0.18);
-  border-radius: 999px;
-  background: rgba(255, 250, 245, 0.12);
-  color: #fffaf5;
+  display: block;
 }
 
 .reader-stage {
@@ -318,21 +272,9 @@ input {
   overflow: hidden;
 }
 
-.reader-status {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(34, 24, 15, 0.68);
-  color: #fffaf5;
-}
-
 .reader-image {
-  max-width: 92vw;
-  max-height: 82vh;
+  max-width: min(96vw, 1200px);
+  max-height: calc(100vh - 92px);
   width: auto;
   height: auto;
   object-fit: contain;
@@ -340,16 +282,55 @@ input {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
 }
 
+.reader-dock {
+  position: fixed;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 10px;
+  backdrop-filter: blur(16px);
+}
+
+.dock-icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  color: #fffaf5;
+  background: linear-gradient(135deg, #3a3028, #22180f);
+}
+
+.dock-pagebox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  white-space: nowrap;
+}
+
+.dock-pagebox input {
+  width: 54px;
+  height: 28px;
+  padding: 4px 6px;
+  text-align: center;
+  border-radius: 999px;
+}
+
 @media (max-width: 900px) {
   .dashboard {
     grid-template-columns: 1fr;
   }
 
-  .toolbar {
-    grid-template-columns: 1fr;
-  }
-
-  .reader-toolbar {
-    flex-direction: column-reverse;
+  .reader-dock {
+    flex-wrap: wrap;
   }
 }
