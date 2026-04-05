@@ -3,7 +3,7 @@ import {
   createBookClient,
   createLimiter,
   getDeviceProfile,
-} from "../src/index.js";
+} from "./src/index.js";
 
 const { jsPDF } = window.jspdf;
 
