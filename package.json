@@ -11,6 +11,26 @@
   "source": "src/index.js",
   "module": "lib/index.js",
   "main": "dist/main.js",
+  "targets": {
+    "main": {
+      "context": "browser",
+      "includeNodeModules": true,
+      "outputFormat": "commonjs",
+      "source": "src/index.js"
+    },
+    "module": {
+      "context": "browser",
+      "includeNodeModules": true,
+      "outputFormat": "esmodule",
+      "source": "src/index.js"
+    },
+    "demo": {
+      "context": "browser",
+      "distDir": "demo/dist",
+      "publicUrl": "./",
+      "source": "demo/index.html"
+    }
+  },
   "files": [
     "css",
     "es",
@@ -18,15 +38,18 @@
     "umd"
   ],
   "scripts": {
-    "watch": "parcel watch",
-    "build": "parcel build",
-    "start": "parcel demo/index.html --dist-dir demo/dist"
+    "watch": "parcel watch --target demo",
+    "build": "parcel build --target main --target module --no-cache",
+    "build:demo": "parcel build --target demo --no-cache",
+    "start": "parcel demo/index.html --dist-dir demo/dist --no-cache"
   },
   "devDependencies": {
     "buffer": "^6.0.3",
-    "parcel": "^2.12.0"
+    "parcel": "^2.12.0",
+    "process": "^0.11.10"
   },
   "dependencies": {
-    "axios": "^1.6.8"
+    "axios": "^1.6.8",
+    "jspdf": "^4.2.1"
   }
 }

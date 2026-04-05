@@ -1,17 +1,100 @@
-<html>
-
-<head>
-    <link rel="icon" type="image/png" />
-    <title>Rekhta downloader</title>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rekhta Book Downloader</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="./index.js" type="module"></script>
-</head>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <p class="eyebrow">Rekhta Downloader</p>
+        <h1>Fast book downloads with lazy preview and manifest caching.</h1>
+        <p>
+          This frontend reads your backend manifest, avoids scraping Rekhta in the browser,
+          and keeps the heavy work bounded so it can still run on weaker phones.
+        </p>
 
-<body>
-    <form id="download-form">
-        <input type="text" name="url" placeholder="Enter the url"
-            value="https://www.rekhta.org/ebooks/bela-mein-mela-gadar-ki-mari-shahzadiyan-rashidul-khairi-ebooks?lang=ur" />
-        <input type="submit" value="Download" />
-    </form>
-</body>
+        <form id="book-form" class="toolbar">
+          <input
+            id="book-url"
+            name="url"
+            type="url"
+            placeholder="Paste a Rekhta book URL"
+            autocomplete="off"
+          />
+          <button type="submit">Load Book</button>
+          <button id="cancel-button" type="button" disabled>Cancel</button>
+        </form>
 
+        <div class="status-strip">
+          <span class="badge" id="cache-badge">No manifest cached yet</span>
+          <div class="status-copy">
+            <strong id="progress-label">Idle</strong>
+            <p id="status-text" data-tone="muted"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard">
+        <aside class="panel">
+          <h2>Book State</h2>
+
+          <div class="meta-list">
+            <div class="meta-row">
+              <span>Title</span>
+              <strong id="meta-title">No book loaded</strong>
+            </div>
+
+            <div class="meta-row">
+              <span>Author</span>
+              <strong id="meta-author">Waiting for manifest</strong>
+            </div>
+
+            <div class="meta-row">
+              <span>Pages</span>
+              <strong id="meta-pages">0 pages</strong>
+            </div>
+          </div>
+
+          <div class="progress-stack">
+            <progress id="task-progress" max="100" value="0"></progress>
+          </div>
+
+          <div class="secondary-actions">
+            <button id="download-button" type="button" disabled>Download PDF</button>
+          </div>
+        </aside>
+
+        <section class="panel preview-panel">
+          <h2>Lazy Preview</h2>
+          <div id="preview-grid" class="preview-grid"></div>
+        </section>
+      </section>
+    </main>
+
+    <div id="reader-modal" class="reader-modal reader-modal--hidden">
+      <div class="reader-shell">
+        <div class="reader-toolbar">
+          <button id="reader-close" type="button" class="reader-close">Close</button>
+          <div class="reader-nav">
+            <button id="reader-prev" type="button" aria-label="Previous page">&lt;</button>
+            <label class="reader-pagebox" for="reader-page-input">
+              <input id="reader-page-input" type="number" min="1" inputmode="numeric" />
+              <span id="reader-page-total">/ 0</span>
+            </label>
+            <button id="reader-next" type="button" aria-label="Next page">&gt;</button>
+          </div>
+        </div>
+
+        <div class="reader-stage">
+          <p id="reader-status" class="reader-status"></p>
+          <img id="reader-image" class="reader-image" alt="" />
+        </div>
+      </div>
+    </div>
+  </body>
 </html>
