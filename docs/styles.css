@@ -288,7 +288,7 @@ input {
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-top: 8px;
 }
 
 .reader-nav {

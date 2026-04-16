@@ -8,7 +8,7 @@ import {
 const { jsPDF } = window.jspdf;
 
 const SAMPLE_BOOK_URL =
-  "https://www.rekhta.org/ebooks/deewan-e-chirkin-shekh-baqar-ali-chirkeen-ebooks-8";
+  "https://www.rekhta.org/ebooks/deewan-ghalib-mirza-ghalib-ebooks";
 const DEFAULT_PROXY_TEMPLATE = `${DEFAULT_PROXY_PREFIX}`;
 const PROXY_STORAGE_KEY = "rekhta_proxy_prefix";
 
@@ -106,7 +106,10 @@ async function onLoadBook(event) {
       "success",
     );
   } catch (error) {
-    handleError(error, "Unable to load the book manifest. Check the proxy prefix.");
+    handleError(
+      error,
+      "Unable to load the book manifest. Check the proxy prefix.",
+    );
   }
 }
 
@@ -450,10 +453,7 @@ async function renderReaderPage(pageIndex) {
 
   try {
     const objectUrl = await ensurePagePreview(pageIndex);
-    if (
-      requestToken !== state.readerRequestToken ||
-      isReaderClosed()
-    ) {
+    if (requestToken !== state.readerRequestToken || isReaderClosed()) {
       return;
     }
 
@@ -463,7 +463,6 @@ async function renderReaderPage(pageIndex) {
     if (error.name === "AbortError") {
       return;
     }
-
   }
 }
 
